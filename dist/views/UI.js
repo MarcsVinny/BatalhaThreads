@@ -1,0 +1,97 @@
+// Elementos do DOM
+const arena = document.getElementById('arena');
+const logContainer = document.getElementById('log');
+const btnStart = document.getElementById('btnStart');
+export const UI = {
+    // Renderiza os cards iniciais
+    renderizarArena(professores) {
+        arena.innerHTML = '';
+        professores.forEach(p => {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.id = `card-${p.nome}`;
+            // Dentro de renderizarArena...
+            div.innerHTML = `
+    <img src="${p.avatar}" class="avatar-img" alt="${p.nome}">
+    <div class="stamina-bg"><div class="stamina-fill" id="stamina-${p.nome}" style="width: 100%"></div></div>
+    <div class="name">${p.nome}</div>
+    <div class="stats">⚔️${p.ataque} 🛡️${p.defesa} ⚡${(p.velocidade / 1000).toFixed(1)}s</div>
+    <div class="hp-bg"><div class="hp-fill" id="hp-${p.nome}" style="width: 100%"></div></div>
+    <div class="hp-text" id="text-${p.nome}">${p.hp}/${p.maxHp}</div>
+`;
+            arena.appendChild(div);
+        });
+    },
+    atualizarHp(nome, hpAtual, maxHp) {
+        const bar = document.getElementById(`hp-${nome}`);
+        const text = document.getElementById(`text-${nome}`);
+        if (bar && text) {
+            const pct = (hpAtual / maxHp) * 100;
+            bar.style.width = `${pct}%`;
+            text.innerText = `${Math.max(0, Math.round(hpAtual))}/${maxHp}`;
+            if (pct < 30)
+                bar.style.backgroundColor = '#ff4444'; // Danger color
+        }
+    },
+    atualizarStamina(nome, valor) {
+        const bar = document.getElementById(`stamina-${nome}`);
+        if (bar)
+            bar.style.width = `${valor}%`;
+    },
+    animarAtaque(nome, critico) {
+        const card = document.getElementById(`card-${nome}`);
+        if (card) {
+            card.classList.remove('attacking', 'sleeping');
+            void card.offsetWidth; // Trigger reflow
+            card.classList.add('attacking');
+            if (critico) {
+                card.classList.add('crit-effect');
+                setTimeout(() => card.classList.remove('crit-effect'), 500);
+            }
+        }
+    },
+    animarDano(nome) {
+        const card = document.getElementById(`card-${nome}`);
+        if (card) {
+            card.classList.remove('hit', 'sleeping');
+            void card.offsetWidth;
+            card.classList.add('hit');
+        }
+    },
+    animarDescanso(nome) {
+        const card = document.getElementById(`card-${nome}`);
+        if (card) {
+            card.classList.add('sleeping');
+            setTimeout(() => card.classList.remove('sleeping'), 1500);
+            this.log(`💤 ${nome} entrou em WAIT (Recuperando I/O...)`, 'log-sleep');
+        }
+    },
+    marcarMorto(nome) {
+        const card = document.getElementById(`card-${nome}`);
+        card === null || card === void 0 ? void 0 : card.classList.add('dead');
+        card === null || card === void 0 ? void 0 : card.classList.remove('sleeping', 'attacking');
+    },
+    marcarVencedor(nome) {
+        const card = document.getElementById(`card-${nome}`);
+        card === null || card === void 0 ? void 0 : card.classList.add('winner');
+        card === null || card === void 0 ? void 0 : card.classList.remove('sleeping');
+        btnStart.innerText = "🔄 REINICIAR SISTEMA";
+        btnStart.disabled = false;
+    },
+    log(msg, type = '') {
+        const div = document.createElement('div');
+        div.className = `log-entry ${type}`;
+        div.innerHTML = `<span style="color:#666">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
+        logContainer.appendChild(div);
+        logContainer.scrollTop = logContainer.scrollHeight;
+    },
+    setLoadingState() {
+        btnStart.disabled = true;
+        btnStart.innerText = "SIMULAÇÃO EM ANDAMENTO...";
+        logContainer.innerHTML = '<div class="log-entry"> > Kernel iniciado...</div>';
+    },
+    // Permite que o Controller defina o que acontece ao clicar
+    bindStartButton(handler) {
+        btnStart.addEventListener('click', handler);
+    }
+};
